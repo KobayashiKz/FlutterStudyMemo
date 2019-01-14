@@ -1,6 +1,9 @@
 // flutterのマテリアルデザインによるUIウィジェットがまとめられているパッケージ
 import 'package:flutter/material.dart';
 
+// クパティーノUI
+import 'package:flutter/cupertino.dart';
+
 // MyApp()がウィジェット
 // main関数でMyApp()のウィジェットのアプリを起動させている処理
 // runApp(): ウィジェットのインスタンスを実行する
@@ -35,7 +38,7 @@ class MyHomePage extends StatefulWidget {
 
   @override
   // これで_MyHomePageState()クラスがステートクラスとして扱われるようになる
-  ShowDialogSample createState() => new ShowDialogSample();
+  CupertinoUISample createState() => new CupertinoUISample();
 }
 
 // Entityクラス
@@ -976,5 +979,741 @@ class ShowDialogSample extends State<MyHomePage> {
 /**
  * 第5章: 複雑な構造のウィジェット
  */
+// AppBarをカスタマイズする
+class AppBarCustomSample extends State<MyHomePage>{
+  String _message;
+  String _stars = "";
+  int _star = 2;
+
+  @override
+  void initState() {
+    _message = "ok.";
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "My App"
+        ),
+        // leading: AppBarの左側に配置される
+        leading: BackButton(
+          color: Colors.white,
+        ),
+
+        // actions: AppBarの右側に配置される
+        // リスト順に左から配置されていく
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.android),
+            tooltip: "add star...",
+            onPressed: iconPressedA,
+          ),
+
+          IconButton(
+            icon: Icon(Icons.favorite),
+            tooltip: "subtract start...",
+            onPressed: iconPressedB,
+          ),
+        ],
+
+        // bottom: AppBarの下に配置される
+        // PreferredSizeを使用する必要がある
+        bottom: PreferredSize(
+          // 高さを指定
+          preferredSize: const Size.fromHeight(30.0),
+          child: Center(
+            child: Text(_stars,
+            style: TextStyle(
+              fontSize: 22.0,
+              color: Colors.white,
+            ),),
+          ),
+        ),
+      ),
+      body: Center(
+        child: Text(
+          _message,
+          style: const TextStyle(
+            fontSize: 28.0,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void iconPressedA() {
+    _message = 'tap "android".';
+    _star++;
+    update();
+  }
+
+  void iconPressedB() {
+    _message = 'tap "favorite".';
+    _star--;
+    update();
+  }
+
+  void update() {
+    // 0~5の範囲におさめる
+    _star = _star < 0 ? 0: _star > 5 ? 5 : _star;
+    setState(() {
+      _stars = '★★★★★☆☆☆☆☆'.substring(5 - _star ,5 - _star + 5);
+      _message = _message + "[$_star]";
+    });
+  }
+}
 
 
+// BottomNavigationBar: 画面下部に表示するバー
+// 基本形: BottomNavigationBar(currentIndex: [int], items: [BottomNavigationBarItemリスト], onTap: ...)
+class BottomNavigationBarSample extends State<MyHomePage> {
+  String _message;
+  int _index = 0;
+
+  @override
+  void initState() {
+    _message = "ok.";
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("My App"),
+      ),
+      body: Center(
+        child: Text(
+          _message,
+          style: TextStyle(
+            fontSize: 28.0,
+          ),
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _index,
+
+          items: <BottomNavigationBarItem>[
+            // BottomNavigationBarItemをリストで持つ
+            BottomNavigationBarItem(
+              title: Text("bottom"),
+              icon: Icon(Icons.android)
+            ),
+
+            BottomNavigationBarItem(
+              title: Text("bottom"),
+              icon: Icon(Icons.favorite),
+            ),
+          ],
+      onTap: tapBottomIcon,),
+    );
+  }
+
+  // valueにタップした項目のインデックス番号が入る
+  void tapBottomIcon(int value) {
+    var items = ['Android', 'Heart'];
+    setState(() {
+      _index = value;
+      _message = 'you tapped: "' + items[_index] + '".';
+    });
+  }
+}
+
+
+// ListView: 単純にウィジェットをリストで表示する
+// 基本形: ListView(shrinkWrap: [bool], padding: [EdgeInsets], children: ...)
+// shrinkWrap: 追加された項目によってサイズを自動調整するかどうか
+class ListViewSample extends State<MyHomePage> {
+  String _message;
+  int _index;
+
+  @override
+  void initState() {
+    _message = "ok.";
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "My App"
+        ),
+      ),
+      body: Column(
+        children: <Widget>[
+          Text(
+            _message,
+            style: TextStyle(
+              fontSize: 32.0,
+            ),
+          ),
+
+          ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(20.0),
+
+            children: <Widget>[
+              // ListTile: タップした時の動作をListTileで実現
+              // 基本形: ListTile(leading: .., title: ..., selected: ..., onTap: ...)
+              ListTile(
+                // リストアイテムの左側に位置する
+                leading: const Icon(Icons.android),
+                title: const Text("First item"),
+                // 選択中かどうか
+                selected: _index == 1,
+                onTap: () {
+                  _index = 1;
+                  tapTile();
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.favorite),
+                title: const Text("Second item"),
+                selected: _index == 2,
+                onTap: () {
+                  _index = 2;
+                  tapTile();
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.favorite_border),
+                title: const Text("Third item"),
+                selected: _index == 3,
+                onTap: () {
+                  _index = 3;
+                  tapTile();
+                  },
+              )
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void tapTile() {
+    setState(() {
+      _message = "you tapped: No, $_index.";
+    });
+  }
+}
+
+
+// SingleChildScrollView: スクロールビュー
+// 基本形: ShingleChildScrollView(child: ....)
+// スクロールした時の上下の限界アニメーションはListView側で表示される
+class SingleChildScrollViewSample extends State<MyHomePage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "My App"
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            Container(
+              color: Colors.blue,
+              height: 120.0,
+              child: const Center(
+                child: Text(
+                  "One",
+                  style: const TextStyle(
+                    fontSize: 32.0,
+                  ),
+                ),
+              ),
+            ),
+
+            Container(
+              color: Colors.white,
+              height: 120.0,
+              child: const Center(
+                child: Text(
+                  "Two",
+                  style: TextStyle(
+                    fontSize: 32.0,
+                  ),
+                ),
+              ),
+            ),
+
+            Container(
+              color: Colors.blue,
+              height: 120.0,
+              child: const Center(
+                child: Text(
+                  "Three",
+                  style: TextStyle(
+                    fontSize: 32.0,
+                  ),
+                ),
+              ),
+            ),
+
+            Container(
+              color: Colors.white,
+              height: 120.0,
+              child: const Center(
+                child: Text(
+                  "Four",
+                  style: TextStyle(
+                    fontSize: 32.0,
+                  ),
+                ),
+              ),
+            ),
+
+            Container(
+              color: Colors.blue,
+              height: 120.0,
+              child: const Center(
+                child: Text(
+                  "Five",
+                  style: TextStyle(
+                    fontSize: 32.0,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// SliverAppBar: 可変サイズのAppBarとスクロールするコンテンツが組み合わさったBar
+// 下スクロールすると伸びて、上スクロールするとAppBarに戻る
+// 基本形: SliverAppBar(pinned: [bool], expandedHeight: [double], flexibleSpace: .., actions: ..)
+// pinned: 上スクロールした際に、AppBar部分を残すかどうか
+// expandedHeight: 最大高さ, flexibleSpace: コンテンツを指定, actions: AppBar右側に配置するもの
+// SliverList: SliverAppBarのアイテム
+// 基本形: SliverList(delegate: [SliverChildListDelegate])
+// delegate: コンテンツの内容（AppBarでいう body部分）
+class SliverAppBarSample extends State<MyHomePage> {
+  List _items = <Widget>[];
+
+  @override
+  void initState() {
+    super.initState();
+    for (var i = 0; i < 10; i++) {
+      var item = Container(
+        color: i.isOdd ? Colors.blue : Colors.white,
+        height: 100.0,
+        child: Center(
+          child: Text(
+            "No, $i",
+            style: const TextStyle(
+              fontSize: 32.0,
+            ),
+          ),
+        ),
+      );
+      _items.add(item);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: CustomScrollView(
+
+        slivers: <Widget>[
+
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 200.0,
+            // flexibleSpaceを設定するFlexibleSpaceBar:
+            // 基本形: const FlexibleSpaceBar(title: ...., background: [ウィジェット])
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text(
+                "Sliver App Bar"
+              ),
+              background: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  // URLを指定した画像の取得方法 Image.network
+                  Image.network(
+                    "https://raw.githubusercontent.com/flutter/website/master/src/_includes/code/layout/lakes/images/lake.jpg",
+                    fit: BoxFit.fill,
+                  )
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              // SliverAppBarの右側にアイコン配置
+              IconButton(
+                icon: const Icon(
+                  Icons.android
+                ),
+                tooltip: "icon button",
+                onPressed: () {
+                  print("pressed.");
+                },
+              )
+            ],
+          ),
+
+              SliverList(
+                // body部分の設定.
+                delegate: SliverChildListDelegate(_items),
+              )
+        ],
+      ),
+    );
+  }
+}
+
+// TabBar: タブのノブ部分に表示するUI
+// 基本形: TabBar(controller: [TabController], tabs: [Tabのリスト])
+// TabBarView: コンテンツ表示部分
+// 基本形: TabBarView(controller: [TabController], children: [ウィジェット])
+// TabController
+// 基本形: TabController(vsync: [TickerProvider], length: [int])
+// length: タブの数
+// Tab: TabBarのノブのウィジェットを設定するクラス
+// 基本形: Tab(text: [String])
+class TabBarSample extends State<MyHomePage> with SingleTickerProviderStateMixin {
+  // SingleTickerProviderStateMixin: Tickrを一つ持つTickerProviderクラス
+  // ミックスイン: Dartで他のクラスの機能を取り込む仕組み. インターフェースの実装.
+
+  // 実際にノブ部分に表示するリスト
+  final List<Tab> tabs = <Tab> [
+    Tab(text: "One"),
+    Tab(text: "Two"),
+    Tab(text: "Three"),
+  ];
+
+  TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      // ノブの個数指定
+        length: tabs.length,
+        vsync: this
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "My App"
+        ),
+        // AppBarの下にTabBarを表示する
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: tabs
+        ),
+      ),
+
+      body: TabBarView(
+          controller: _tabController,
+          children: tabs.map((Tab tab) {
+            // toList()でこれらをリスト化している
+            return createTab(tab);
+          }).toList(),
+      ),
+    );
+  }
+
+  //
+  Widget createTab(Tab tab) {
+    return Center(
+      child: Text(
+        'This is "' + tab.text + '" Tab.',
+        style: TextStyle(
+          fontSize: 32.0,
+          color: Colors.blue,
+        ),
+      ),
+    );
+  }
+}
+
+
+// Drawer: Scaffoldに組み込んで作ることができる
+// 基本形: Drawer(child: ウィジェット)
+class DrawerSample extends State<MyHomePage> {
+  List _items = <Widget>[];
+  String _message;
+  int _tapped = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _message = "ok.";
+
+    for (var i = 0; i < 5; i++) {
+      // _itemsにListTileを5つ追加
+      var item = ListTile(
+        leading: const Icon(Icons.android),
+        title: Text("No, $i"),
+        onTap: () {
+          _tapped = i;
+          tapItem();
+        },
+      );
+      _items.add(item);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Flutter App"
+        ),
+      ),
+      body: Center(
+        child: Text(
+          _message,
+          style: TextStyle(
+            fontSize: 32.0,
+          ),
+        ),
+      ),
+      // Scaffoldにdrawerがあるので、ここでドロワーを指定できる
+      drawer: Drawer(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(20.0),
+          children: _items,
+        ),
+      ),
+    );
+  }
+
+  // ドロワーコンテンツがタップされた際の処理
+  void tapItem() {
+    // ドロワー閉じて、テキスト更新
+    Navigator.pop(context);
+    setState(() {
+      _message = "tapped: [$_tapped]";
+    });
+  }
+}
+
+
+// クパティーノUI
+// iOS用のデザイン. 基本的にTextやColumnなどの表示ためのUIは共通
+// 入力のためのUIはクパティーノUIが用意されていたりする
+class CupertinoUISample extends State<MyHomePage> {
+  String _message = "ok.";
+  bool _switch = true;
+  double _slider = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color.fromARGB(255, 235, 235, 235),
+      appBar: AppBar(
+        title: Text(
+          "App Name"
+        ),
+      ),
+
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+
+        children: <Widget>[
+          Text(
+            _message,
+            style: TextStyle(
+              fontSize: 32.0,
+              color: const Color(0xFF000000),
+              fontWeight: FontWeight.w400,
+              fontFamily: "Roboto",
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(10.0)
+          ),
+
+          // クパティーノスイッチ
+          CupertinoSwitch(
+            value: _switch,
+            onChanged: (bool value) {
+              print("switch.");
+              setState(() {
+                _switch = value;
+                _message = "switch: $_switch";
+              });
+            },
+          ),
+
+          // クパティーノスライダー
+          CupertinoSlider(
+            value: _slider,
+            min: 0.0,
+            max: 1.0,
+            divisions: 100,
+            onChanged: (double value) {
+              print(value);
+              setState(() {
+                _slider = value;
+                _message = "slider: $_slider";
+              });
+            },
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            // クパティーノボタン
+            child: CupertinoButton(
+                // 角丸
+                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                pressedOpacity: 0.5,
+                // CupertinoColorsでクパティーノ標準色がまとめられている
+                color: CupertinoColors.activeBlue,
+                onPressed: buttonPressed,
+                padding: EdgeInsets.all(20.0),
+                child: Text(
+                  "tap me!",
+                  style: TextStyle(
+                    fontSize: 28.0,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: "Roboto"
+                  ),
+                ),
+            ),
+          ),
+        ],
+      ),
+
+      bottomNavigationBar: CupertinoNavigationBar(
+        leading: Icon(CupertinoIcons.left_chevron),
+        middle: Text(
+          "Navigation"
+        ),
+        trailing: IconButton(
+          icon: Icon(CupertinoIcons.right_chevron),
+          onPressed: showPicker,
+        ),
+      ),
+    );
+  }
+
+  void buttonPressed() {
+    // ダイアログの表示
+    showDialog(
+      context: context,
+      // クパティーノアラートダイアログ
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        // ダイアログタイトル
+        title: Text(
+          "Hello!"
+        ),
+        // ダイアログメッセージ
+        content: const Text(
+          "This is sample."
+        ),
+        // 選択ボタン. CupertinoDialogActionで設定する
+        actions: <Widget>[
+          CupertinoDialogAction(
+            child: const Text(
+              "Cancel"
+            ),
+            onPressed: () => Navigator.pop<String>(context, "Cancel"),
+          ),
+
+           CupertinoDialogAction(
+             child: const Text(
+               "OK"
+             ),
+             onPressed: () => Navigator.pop<String>(context, "OK"),
+           )
+        ],
+      )
+    ).then<void>((value) => resultAlert(value));
+  }
+
+  void resultAlert(String value) {
+    setState(() {
+      _message = "selected: $value";
+    });
+  }
+
+  void showPicker() {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          // クパティーノピッカー
+          return CupertinoPicker(
+            backgroundColor: CupertinoColors.black,
+            itemExtent: 50.0,
+            children: <Widget>[
+              // クパティーノピッカーの選択肢
+              Text(
+                "One",
+                style: TextStyle(
+                  fontSize: 32.0,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white
+                ),
+              ),
+
+              Text(
+                "Two",
+                style: TextStyle(
+                    fontSize: 32.0,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white
+                ),
+              ),
+
+              Text(
+                "Three",
+                style: TextStyle(
+                    fontSize: 32.0,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white
+                ),
+              ),
+
+              Text(
+                "Four",
+                style: TextStyle(
+                    fontSize: 32.0,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white
+                ),
+              ),
+
+              Text(
+                "Five",
+                style: TextStyle(
+                    fontSize: 32.0,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white
+                ),
+              ),
+            ],
+
+            onSelectedItemChanged: (int value) {
+              print("pick $value");
+            },
+          );
+        });
+  }
+}
