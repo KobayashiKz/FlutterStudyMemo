@@ -4,6 +4,15 @@ import 'package:flutter/material.dart';
 // クパティーノUI
 import 'package:flutter/cupertino.dart';
 
+import 'package:flutter/gestures.dart';
+import 'dart:ui' as ui;
+
+import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
+import 'dart:typed_data';
+import 'dart:async';
+import 'dart:math';
+
 // MyApp()がウィジェット
 // main関数でMyApp()のウィジェットのアプリを起動させている処理
 // runApp(): ウィジェットのインスタンスを実行する
@@ -38,7 +47,7 @@ class MyHomePage extends StatefulWidget {
 
   @override
   // これで_MyHomePageState()クラスがステートクラスとして扱われるようになる
-  CupertinoUISample createState() => new CupertinoUISample();
+  CustomPainterTapSample createState() => new CustomPainterTapSample();
 }
 
 // Entityクラス
@@ -1717,3 +1726,738 @@ class CupertinoUISample extends State<MyHomePage> {
         });
   }
 }
+
+/**
+ * 第6章 グラフィックの描画
+ */
+// ゲームなどのアプリの場合、ウィジェットではなくグラフィックで表示する必要がある
+// RenderObjectWidget
+// RenderBox
+class RenderObjectSample extends State<MyHomePage> {
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color.fromARGB(255, 255, 255, 255),
+      appBar: AppBar(
+        title: Text(
+          "App Name"
+        ),
+      ),
+
+      body: Center(
+        child: MyRenderBoxWidget(),
+      ),
+    );
+  }
+}
+
+// RenderObjectWidgetクラス
+// 基本形
+class MyRenderBoxWidget extends SingleChildRenderObjectWidget {
+
+  @override
+  // ここで返されるRenderObjectが描画に用いられる
+  RenderObject createRenderObject(BuildContext context) {
+    return RenderTapSample();
+  }
+}
+
+// RenderBoxクラス
+// paint()で描画処理を記述
+// 正方形を二つペイントするサンプル
+class _MyRenderBox extends RenderBox {
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    // 描画に使用するメソッドなどがまとめられているCanvas
+    Canvas c = context.canvas;
+    // 描画のオフセット値. 描画エリアを示す
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    // 描画に関する設定を行うPaintクラス
+    Paint p = Paint();
+    // fill: 塗りつぶし, stroke: 輪郭線のみ描画
+    p.style = PaintingStyle.fill;
+    // 描画色の設定
+    p.color = Color.fromARGB(150, 0, 200, 255);
+    // 描画領域をRectで指定
+    // LTWH: 横位置, 縦位置, 幅, 高さ
+    Rect r = Rect.fromLTWH(dx + 50.0, dy + 50.0, 150.0, 150.0);
+    // drawRect(Rect, Paint)で描画実行
+    c.drawRect(r, p);
+
+    p.style = PaintingStyle.stroke;
+    p.color = Color.fromARGB(150, 200, 0, 255);
+    // 線の太さ
+    p.strokeWidth = 10.0;
+    r = Rect.fromLTWH(dx + 100.0, dy + 100.0, 150.0, 150.0);
+    c.drawRect(r, p);
+  }
+}
+
+
+// 正円と楕円を描くRenderBoxのサンプル
+class CirclePaintBox extends RenderBox {
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    // 正円の描画
+    Paint p = Paint();
+    p.style = PaintingStyle.fill;
+    p.color = Color.fromARGB(150, 0, 200, 255);
+    // Offset: 縦横の値をまとめて表すクラス
+    Offset ctr = Offset(dx + 100.0, dy + 100.0);
+    // 正円を描くにはdrawCircleを用いる
+    // [位置], [半径], [Paint]
+    c.drawCircle(ctr, 75.0, p);
+
+    // 楕円1の描画
+    p.style = PaintingStyle.stroke;
+    p.color = Color.fromARGB(150, 200, 0, 255);
+    p.strokeWidth = 10.0;
+    Rect r = Rect.fromLTWH(dx + 100.0, dy + 50.0, 200.0, 150.0);
+    // 楕円を描くにはdrawOval
+    // [Rect], [Paint]
+    c.drawOval(r, p);
+
+    // 楕円2の描画
+    r = Rect.fromLTWH(dx + 50.0, dy + 100.0, 150.0, 200.0);
+    c.drawOval(r, p);
+  }
+}
+
+
+// 直線を描画するRenderBoxのサンプル
+class LinePaintBoxSample extends RenderBox {
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+    Paint p = Paint();
+    p.style = PaintingStyle.stroke;
+    p.strokeWidth = 5.0;
+    p.color = Color.fromARGB(150, 0, 200, 255);
+    for (var i  = 0; i <= 10; i++) {
+      Rect r = Rect.fromLTRB(
+        dx + 50.0 + 20 * i, dy + 50.0, dx + 50.0, dy + 250.0 -20 * i);
+      // drawLine()で直線を描画
+      // Rectの左上と右下を指定して描画する
+      c.drawLine(r.topLeft, r.bottomRight, p);
+    }
+  }
+}
+
+
+// Paragraph
+// 作成方法: 1. ParagraphBuilder作成, 2. スタイルやテキスト追加, 3. Paragraph作成 4. レイアウトの設定, 5. パラグラフの描画
+class ParagraphSample extends RenderBox {
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    // 1
+    ui.ParagraphBuilder builder = ui.ParagraphBuilder(
+      // 左から右へ
+        ui.ParagraphStyle(textDirection: TextDirection.ltr)
+    )
+
+    // 2
+    // pushStyleでTextStyleを設定. flutter.ui
+      ..pushStyle(ui.TextStyle(color: Colors.red, fontSize: 48.0))
+      ..addText("Hello! ")
+      ..pushStyle(ui.TextStyle(color: Colors.blue[700], fontSize: 30.0))
+      ..addText("This is a sample of paragraph text.")
+      ..pushStyle(ui.TextStyle(color: Colors.blue[200], fontSize: 30.0))
+      ..addText("You can draw MULTI-FONT text!");
+
+    // 3
+    ui.Paragraph paragraph = builder.build()
+    // 4
+      ..layout(ui.ParagraphConstraints(width: 300.0));
+
+    // 5
+    Offset off = Offset(dx + 50.0, dy + 50.0);
+    c.drawParagraph(paragraph, off);
+  }
+}
+
+
+// 画像の描画サンプル
+class ImageRenderBoxSample extends RenderBox {
+  ui.Image _image;
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  ImageRenderBoxSample() {
+    loadAssetImage("image1.jpg");
+  }
+
+  // 画像読み込みメソッド
+  // rootBundle.load()で読み込む
+  // rootBundle: トップレベルプロパティ. どこからでも利用可能なプロパティ
+  // load()は非同期で実行され、戻り値はFuture<ByteData>型
+  // Future: Dartの非同期処理の戻り値は、Futureオブジェクトを返す
+  // Future<ByteData>型は、非同期処理を行なって将来ByteData型が返ってくるという意味
+  // 順序: 1. rootBundle.load 2. Uint8List.view 3. ui.instantiateImageCodec
+  // 4. codec.getNextFrame 5. frameinfo.image, markNeedsPaint
+  loadAssetImage(String fname) => rootBundle.load(
+    "assets/$fname").then( (bd) {
+      // bd > 取得したByteData
+      // bd.buffer > ByteBuffer
+      // Uint8List: イメージのコーデックに関するクラス
+      Uint8List u8lst = Uint8List.view(bd.buffer);
+      // データを元にイメージのオブジェクトを取得
+      // これも非同期処理で、戻り値はFuture<Codec>
+      ui.instantiateImageCodec(u8lst).then((codec) {
+        // getNextFrame(): 非同期処理で次のアニメーションフレームを取得する
+        codec.getNextFrame().then(
+            (frameInfo) {
+              // ここでようやくイメージを取り出すことができる
+              _image = frameInfo.image;
+              // 表示更新の通知を送り、UIが更新される
+              markNeedsPaint();
+              print("_img created; $_image");
+            }
+        );
+      });
+  });
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    Paint p = Paint();
+    Offset off = Offset(dx + 50.0, dy + 50.0);
+    // 200 * 200 の大きさに指定
+    Rect r  = Rect.fromLTRB(dx + 50.0, dy + 50.0, 200.0, 200.0);
+    if (_image != null) {
+      // drawImageで画像を描画
+//      c.drawImage(_image, off, p);
+      // drawImageRectで領域を指定して画像を描画
+      Rect r0 = Rect.fromLTRB(0.0, 0.0, _image.width.toDouble(), _image.height.toDouble());
+      c.drawImageRect(_image, r0, r, p);
+      print("draw _image.");
+    } else {
+      print("_image is null.");
+    }
+  }
+}
+
+
+// パス: 複雑な形状を作成するために用意されているクラス
+// 順序: 1. Pathの作成, 2. 図形の追加, 3. パスの描画
+class PathSample extends RenderBox {
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    // 1
+    Path path = Path();
+
+    // 2. 楕円形を3つ追加
+    Rect r = Rect.fromLTWH(dx + 50.0, dy + 50.0, 75.0, 75.0);
+    // addRect: 四角形, addOval: 楕円, addPolygon: 多角形, addArc: 円弧
+    path.addOval(r);
+    r = Rect.fromLTWH(dx + 75.0, dy + 75.0, 125.0, 125.0);
+    path.addOval(r);
+    r = Rect.fromLTWH(dx + 125.0, dy + 125.0, 175.0, 175.0);
+    path.addOval(r);
+
+    // 現在の状態を保存する
+    c.save();
+
+    Paint p = Paint();
+    p.color = Color.fromARGB(150, 255, 0, 0);
+    p.style = PaintingStyle.fill;
+    // 3
+    c.drawPath(path, p);
+
+    // 始点を縦に100移動
+    c.translate(0.0, 100.0);
+    p.color = Color.fromARGB(150, 0, 0, 255);
+    c.drawPath(path, p);
+
+    p.color = Color.fromARGB(150, 0, 255, 0);
+    // 回転
+    c.rotate(-0.5 * pi);
+    c.translate(-600.0, -200.0);
+    // 1.75倍に拡大
+    c.scale(1 * 1.75);
+    c.drawPath(path, p);
+
+    // saveした状態に戻す
+    // 戻しておかないと、そのほかに描画するものすべてに影響を与えてしまう. 描画したら必ずRestoreする
+    c.restore();
+  }
+}
+
+
+// クリッピング: 一部の領域をクリップして、その部分だけ描画処理を適用できる仕組み
+class ClippingSample extends RenderBox {
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    c.save();
+
+    // clipRectで領域を切り取り
+    // クリップを解除したい場合には、以前のcanvasを保存しておき、restoreするしか現状方法はない
+    c.clipRect(Rect.fromLTWH(dx + 75.0, dy + 75.0, 150.0, 150.0));
+
+    Paint p = Paint();
+    p.color = Color.fromARGB(150, 255, 0, 0);
+    p.style = PaintingStyle.fill;
+    Offset off = Offset(dx + 100.0, dy + 100.0);
+    c.drawCircle(off, 50.0, p);
+
+    p.color = Color.fromARGB(150, 0, 255, 0);
+    off = Offset(dx + 150.0, dy + 150.0);
+    c.drawCircle(off, 75.0, p);
+
+    p.color = Color.fromARGB(150, 0, 0, 255);
+    off = Offset(dx + 200.0, dy + 200.0);
+    c.drawCircle(off, 100.0, p);
+
+    c.restore();
+  }
+}
+
+// クリッピングパス: 複雑な形状のクリッピング. Pathを使ってクリッピングを行う
+class ClippingPathSample extends RenderBox {
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    // 3つの円を描く
+    Path path = Path();
+    Rect r = Rect.fromLTWH(dx + 50.0, dy + 50.0, 75.0, 75.0);
+    path.addOval(r);
+    r = Rect.fromLTWH(dx + 75.0, dy + 75.0, 125.0, 125.0);
+    path.addOval(r);
+    r = Rect.fromLTWH(dx + 125.0, dy + 125.0, 175.0, 175.0);
+    path.addOval(r);
+
+    Paint p = Paint();
+    p.style = PaintingStyle.fill;
+
+    c.save();
+    // 指定したパスでクリッピング. 三つの円でクリッピングしている
+    c.clipPath(path);
+
+    // クリッピングしたキャンバスに合計100個の円を描く
+    for (var i = 0; i < 100; i++) {
+      Random random = Random();
+      // 高さ、幅、半径をランダム抽選
+      double w = random.nextInt(dx + 300).toDouble();
+      double h = random.nextInt(dy + 300).toDouble();
+      double cr = random.nextInt(50).toDouble();
+
+      // 色もランダム抽選
+      int r = random.nextInt(255);
+      int g = random.nextInt(255);
+      int b = random.nextInt(255);
+
+      p.color = Color.fromARGB(50, r, g, b);
+      // クリッピングしたキャンバスに円を描く
+      c.drawCircle(Offset(w, h), cr, p);
+    }
+    // 最終的にはキャンバスをリストアしておく
+    c.restore();
+  }
+}
+
+
+// ブレンドモード: 複数のグラフィックを合成するためにブレンドを用いる
+// さまざまなモードがあり、それによってグラフィックが変わってくる
+// やり方1. drawColorを使用する
+class BlendDrawColorSample extends RenderBox {
+  ui.Image _image;
+
+  BlendDrawColorSample() {
+    loadAssetImage("image1.jpg");
+  }
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    if (_image != null) {
+      c.drawImage(_image, Offset(dx + 50.0, dy + 50.0), Paint());
+    }
+
+    // ブレンドモードmultiply: 指定の色を乗算する
+    // 以下では青色フィルタを通してみたようになる
+    c.drawColor(Color.fromARGB(255, 0, 0, 255), BlendMode.multiply);
+  }
+
+  // 画像読み込み
+  loadAssetImage(String fname) => rootBundle.load(
+      "assets/$fname").then( (bd) {
+    Uint8List u8lst = Uint8List.view(bd.buffer);
+    ui.instantiateImageCodec(u8lst).then((codec) {
+      codec.getNextFrame().then(
+              (frameInfo) {
+            _image = frameInfo.image;
+            markNeedsPaint();
+            print("_img created; $_image");
+          }
+      );
+    });
+  });
+}
+
+
+// クリッピングにより一部だけブレンドモードをかけるサンプル
+class BlendDrawColorClipSample extends RenderBox {
+  ui.Image _image;
+
+  BlendDrawColorClipSample() {
+    loadAssetImage("image1.jpg");
+  }
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    int dx = offset.dx.toInt();
+    int dy = offset.dy.toInt();
+
+    if (_image != null) {
+      c.drawImage(_image, Offset(dx + 50.0, dy + 50.0), Paint());
+    }
+
+    Paint p = Paint();
+    p.style = PaintingStyle.fill;
+
+    c.save();
+    // クリッピングした領域をブレンドモードをかける
+    Rect r = Rect.fromLTWH(dx + 70.0, dy + 70.0, 130.0, 130.0);
+    c.clipRect(r);
+    c.drawColor(Color.fromARGB(255, 255, 0, 0), BlendMode.darken);
+
+    c.restore();
+
+    // クリッピングした領域をブレンドモードをかける
+    r = Rect.fromLTWH(dx + 200.0, dy + 200.0, 130.0, 130.0);
+    c.clipRect(r);
+    c.drawColor(Color.fromARGB(255, 0, 255, 0), BlendMode.lighten);
+
+    c.restore();
+  }
+
+  // 画像読み込み
+  loadAssetImage(String fname) => rootBundle.load(
+      "assets/$fname").then( (bd) {
+    Uint8List u8lst = Uint8List.view(bd.buffer);
+    ui.instantiateImageCodec(u8lst).then((codec) {
+      codec.getNextFrame().then(
+              (frameInfo) {
+            _image = frameInfo.image;
+            markNeedsPaint();
+            print("_img created; $_image");
+          }
+      );
+    });
+  });
+}
+
+
+// Paintによるブレンドモードの設定
+// 2. Paintによってブレンドモードを設定する
+class BlendPaintSample extends RenderBox {
+  ui.Image _image;
+
+  @override
+  bool hitTest(HitTestResult result, {@required Offset position}) {
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    double dx = offset.dx + 30.0;
+    double dy = offset.dy + 30.0;
+
+    if (_image != null) {
+      c.drawImage(_image, Offset(dx, dy), Paint());
+    }
+
+    Paint p = Paint();
+    p.style = PaintingStyle.fill;
+    p.blendMode = BlendMode.darken;
+
+    for (var i = 0; i < 10; i++) {
+      for (var j = 0; j < 10; j++) {
+        p.color = Color.fromARGB(255, 25 * i, 0, 25 * j);
+        Rect r = Rect.fromLTWH(dx + 30.0 * i, dy + 30.0 * j, 30.0, 30.0);
+        c.drawOval(r, p);
+      }
+    }
+  }
+}
+
+
+// グラフィックのタップイベント処理
+// RenderBoxにはタップイベントが用意されていないため、メソッドを用意する必要がある
+// PointerEvent: タップした位置などの情報をまとめたもの
+// HitTestEntry: HitTestによる情報をまとめたもの
+class RenderTapSample extends RenderBox {
+  ui.Image _image;
+  Offset _pos;
+
+  @override
+  // result: hitTestの結果をまとめたもの
+  // ここにadd()でHitTestEntryを追加 -> その後にhandleEvent()が呼ばれるようになる
+  bool hitTest(HitTestResult result, { @required Offset position}) {
+    result.add(BoxHitTestEntry(this, position));
+    return true;
+  }
+
+  @override
+  // PointerEvent: ここに発生したイベント情報がまとめられている
+  void handleEvent(PointerEvent event, HitTestEntry entry) {
+    super.handleEvent(event, entry);
+    // event.position: 位置情報(Offset値)
+    // そのほかにも、down,buttons,kind,orientation,pressureなどが用意されている
+    _pos = event.position;
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    Canvas c = context.canvas;
+    c.drawColor(Colors.black, BlendMode.clear);
+    if (_pos != null) {
+      Paint p = Paint();
+      p.style = PaintingStyle.fill;
+      for (var i = 0; i < 10; i++) {
+        p.color = Color.fromARGB(50, 255, 255, 255);
+        c.drawCircle(_pos, i * 5.0, p);
+      }
+    }
+  }
+}
+
+
+// CustomPaint: Canvasを表示するだけのウィジェット
+// 基本形: CustomPaint(painter: [CustomPainter])
+// CustomPainter: 描画を表示するウィジェットとして機能する
+// 基本形: extends CustorPainter{ void paint(), bool shouldRepaint()}
+class CustomPainterSample extends State<MyHomePage> {
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color.fromARGB(255, 255, 255, 255),
+      appBar: AppBar(
+        title: Text(
+          "App Name",
+          style: TextStyle(fontSize: 30.0),
+        ),
+      ),
+      body: Center(
+        child: CustomPaint(
+          painter: PainterSample(),
+        ),
+      ),
+    );
+  }
+}
+
+class PainterSample extends CustomPainter {
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint p = Paint();
+    p.style = PaintingStyle.fill;
+    p.color = Colors.black;
+    print(size);
+
+    // ランダムな位置、ランダムな色で円を100個作る
+    // 描画処理はRendarBoxとなんらかわりない
+    for (var i = 0; i < 100; i++) {
+      Random random = Random();
+      // -150 ~ 149
+      double w = random.nextInt(300).toDouble() - 150;
+      double h = random.nextInt(300).toDouble() - 150;
+      double cr = random.nextInt(300).toDouble();
+      int r = random.nextInt(255);
+      int g = random.nextInt(255);
+      int b = random.nextInt(255);
+
+      p.color = Color.fromARGB(50, r, g, b);
+      canvas.drawCircle(Offset(w, h), cr, p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
+
+
+// CustomPaintのタップイベント
+// Listenerを使用する
+// ConstrainedBox: なにも表示されないウィジェット
+// ConstrainedBoxとListenerを組み合わせてタップイベントを取得する
+// 基本形: ConstrainedBox(constraints: BoxConstrains.expand())
+class CustomPainterTapSample extends State<MyHomePage> {
+
+  // ウィジェットにIDを割り当てるもの
+  GlobalKey _homeStateKey = GlobalKey();
+  Offset _pos;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color.fromARGB(255, 255, 255, 255),
+      appBar: AppBar(
+        title: Text(
+          "App Name",
+          style: TextStyle(
+            fontSize: 30.0
+          ),
+        ),
+      ),
+      body: Center(
+        child: Listener(
+          onPointerDown: _pointerDown,
+          onPointerMove: _pointerMove,
+          child: CustomPaint(
+            // 一意のキーを割り当てる. _homeStateKey.currentContextで
+            // _homeSateKeyが割り当てられているウィジェットが取り出せる
+            key: _homeStateKey,
+            painter: PainterTapSample(_pos),
+            child: ConstrainedBox(
+                constraints: BoxConstraints.expand()
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _pointerDown(PointerDownEvent event) {
+    // RenderObjectというレンダリングを行うオブジェクトを取得
+    RenderBox referenceBox = _homeStateKey.currentContext.findRenderObject();
+    setState(() {
+      // posの値を更新して、PainterTapSampleのposも変更し、表示を更新している
+      // globalToLocalで引数の座標をローカル座標に変換している（相対座標）
+      _pos = referenceBox.globalToLocal(event.position);
+    });
+  }
+
+  void _pointerMove(PointerMoveEvent event) {
+    RenderBox referenceBox = _homeStateKey.currentContext.findRenderObject();
+    setState(() {
+      // posの値を更新して、PainterTapSampleのposも変更し、表示を更新している
+      _pos = referenceBox.globalToLocal(event.position);
+    });
+  }
+}
+
+class PainterTapSample extends CustomPainter {
+  Offset _pos;
+
+  // コンストラクタでタップした位置情報を取得する
+  PainterTapSample(this._pos);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint p = Paint();
+    p.style = PaintingStyle.fill;
+    p.color = Color.fromARGB(25, 255, 0, 0);
+    if (_pos != null) {
+      for (var i = 0; i < 10; i++) {
+        canvas.drawCircle(_pos, 10.0 * i, p);
+      }
+      canvas.drawCircle(_pos, 50.0, p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
+
