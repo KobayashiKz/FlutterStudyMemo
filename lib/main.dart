@@ -12,6 +12,10 @@ import 'package:flutter/rendering.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'dart:math';
+import 'dart:io';
+
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // MyApp()がウィジェット
 // main関数でMyApp()のウィジェットのアプリを起動させている処理
@@ -31,8 +35,8 @@ class MyApp extends StatelessWidget {
     // ex. ウィジェットが組み込まれている親や子の情報など
     return MaterialApp(
       title: "Flutter Demo",
-      home: new MyHomePage(
-        title: this.title,
+      home: new PreferencesSample(
+//        title: this.title,
       ),
     );
   }
@@ -2461,3 +2465,476 @@ class PainterTapSample extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
 
+
+/**
+ * 第7章 ナビゲーション/ファイルアクセス/設定情報/データベースアクセス
+ */
+
+// Navigator: 画面遷移用のクラス
+// Navigator.push([BuildContext], [Route])
+// Navigator.pop([BuildContext])    の2つで成り立つ
+class FirstScreen extends StatefulWidget {
+
+  // コンストラクタ
+  FirstScreen({Key key}): super(key: key);
+
+  @override
+  _FirstScreenState createState() => new _FirstScreenState();
+
+}
+
+class _FirstScreenState extends State<FirstScreen> {
+  final _controller = TextEditingController();
+  String _input;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Home"),
+      ),
+      body: Column(
+        children: <Widget>[
+          Text("Home Screen"),
+          Padding(padding: EdgeInsets.all(10.0),),
+          TextField(
+            controller: _controller,
+            onChanged: changeField,
+          )
+        ],
+      ),
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 1,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            title: Text("Home"),
+            icon: Icon(Icons.home)
+          ),
+          BottomNavigationBarItem(
+            title: Text("next"),
+            icon: Icon(Icons.navigate_next)
+          )
+        ],
+        onTap: (int value) {
+          // BottomNavigationBarItemのNextをタップしたら画面遷移
+          if (value == 1) {
+            // 画面の表示に関する情報はRouteクラスで管理されている
+            // RouteのサブクラスPageRouteで現在の表示をそのままPageRouteクラスのインスタンスにおきかえて記憶
+            // ある画面から次の画面に遷移 -> この画面をPageRouteインスタンスに置き換えて、これを保管すること
+            // 前の画面に戻る -> 保管してあったPageRouteインスタンスを取り出して画面に戻すこと
+            // 引数に入れることで画面間の値の受け渡しができる
+            Navigator.push(context, MaterialPageRoute(
+                builder: (context) => SecondScreen(_input)));
+          }
+        },
+      ),
+    );
+  }
+
+  void changeField(String val) => _input = val;
+}
+
+
+
+class SecondScreen extends StatelessWidget {
+  final String _value;
+
+  SecondScreen(this._value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // pushで起動するとAppBarに自動的に←ボタンが表示される
+      appBar: AppBar(
+        title: Text("Next"),
+      ),
+      body: Center(
+        child: Text("you typed: $_value.",),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            title: Text("prev"),
+            icon: Icon(Icons.navigate_before),
+          ),
+          BottomNavigationBarItem(
+            title: Text("?"),
+            icon: Icon(Icons.android),
+          )
+        ],
+        onTap: (int value) {
+          // BottomNavigationBarItemの戻るを押したら画面を戻す
+          if (value == 0) {
+            Navigator.pop(context);
+          }
+        },
+      ),
+    );
+  }
+}
+
+
+// pushによる画面遷移: インスタンスを作成してPageRouteを作る処理を記述しないといけない欠点がある
+// Route: あらかじめルートと表示するウィジェットの関係を定義
+// 基本形: routes: {"アドレス" : (context) => ウィジェット, ..繰り返し..}
+// routesによるルーティングと呼ぶ
+class RoutesSample extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      // ここで指定したキーが最初に表示されるウィジェットになる
+      initialRoute: "/",
+      routes: {
+        // routesでは、以下のように定義
+        // initialRouteと同じキーが最初に表示されるウィジェットとなる
+        "/": (context) => FirstRouteScreen(),
+        "/second": (context) => SecondRouteScreen("Second"),
+        "/third": (context) => SecondRouteScreen("Third"),
+      },
+    );
+  }
+}
+
+class FirstRouteScreen extends StatefulWidget {
+
+  FirstRouteScreen({Key key}) : super(key: key);
+
+  @override
+  _FirstScreenRouteState createState() => new _FirstScreenRouteState();
+}
+
+class _FirstScreenRouteState extends State<FirstRouteScreen> {
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Home"),
+      ),
+      body: Center(
+        child: Text("Home Screen"),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 1,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            title: Text("Home"),
+            icon: Icon(Icons.home),
+          ),
+          BottomNavigationBarItem(
+            title: Text("next"),
+            icon: Icon(Icons.navigate_next),
+          )
+        ],
+        onTap: (int value) {
+          if (value == 1) {
+            Navigator.pushNamed(context, "/second");
+          }
+        },
+      ),
+    );
+  }
+}
+
+class SecondRouteScreen extends StatelessWidget {
+  final String _value;
+
+  SecondRouteScreen(this._value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Next"),
+      ),
+      body: Center(
+        child: Text("$_value screen"),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            title: Text("prev"),
+            icon: Icon(Icons.navigate_before)
+          ),
+          BottomNavigationBarItem(
+            title: Text("?"),
+            icon: Icon(Icons.android)
+          )
+        ],
+        onTap: (int value) {
+          if (value == 0) Navigator.pop(context);
+          if (value == 1) {
+            Navigator.pushNamed(context, "/third");
+          }
+        },
+      ),
+    );
+  }
+}
+
+
+// ファイルアクセス
+// File(ファイルパス)
+// 書き出し（非同期）: Future<File> writeAsString([String]);
+// 書き出し（同期）: Future<File> writeAsStringSync([String]);
+// 読み込み（非同期）: try {変数 = await [File].readAsString()};
+// 読み込み（同期）: try{変数 = await [File].readAsStringSync()};
+// Path Providerをpubspec.yamlファイルに記述してインストールする準備が必要
+class FileSample extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      initialRoute: "/",
+      routes: {
+        "/": (context) => FirstFileScreen(),
+      },
+    );
+  }
+}
+
+class FirstFileScreen extends StatefulWidget {
+
+  FirstFileScreen({Key key}): super(key: key);
+
+  @override
+  _FirstFileScreenState createState() => new _FirstFileScreenState();
+}
+
+class _FirstFileScreenState extends State<FirstFileScreen> {
+
+  final _controller = TextEditingController();
+  final _fname = "mydata.txt";
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Home"),
+      ),
+      body: Column(
+        children: <Widget>[
+          Text("Home Screen"),
+          Padding(padding: EdgeInsets.all(20.0),),
+          TextField(
+            controller: _controller,
+          )
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            title: Text("Save"),
+            icon: Icon(Icons.save)
+          ),
+          BottomNavigationBarItem(
+            title: Text("Load"),
+            icon: Icon(Icons.open_in_new)
+          )
+        ],
+
+        onTap: (int value) {
+          switch (value) {
+            case 0:
+              saveIt(_controller.text);
+              setState(() {
+                // 保存後は入力ボックスを空にしておく
+                _controller.text = "";
+              });
+              showDialog(
+                context: context,
+                builder: (BuildContext context) => AlertDialog(
+                  title: Text("saved!"),
+                  content: Text("save message to file."),
+                )
+              );
+              break;
+
+            case 1:
+              setState(() {
+                loadIt().then((String value) {
+                  // 値を読み込んだ後の処理
+                  setState(() {
+                    _controller.text = value;
+                  });
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => AlertDialog(
+                      title: Text("loaded!"),
+                      content: Text("load message from file."),
+                    )
+                  );
+                });
+              });
+              break;
+
+            default:
+              print("no default.");
+          }
+        },
+      ),
+    );
+  }
+
+  // Fileインスタンスを取得する
+  // 非同期関数を使用しているためメソッド自体も非同期にしている
+  Future<File> getDataFile(String filename) async {
+    // アプリに割り当てられているフォルダパスを調べて取得する
+    final directory = await getApplicationDocumentsDirectory();
+    // アプリのパスとファイル名を付与したパスでFileインスタンス取得
+    return File(directory.path + "/" + filename);
+  }
+
+  void saveIt(String value) async {
+    // Fileインスタンスを呼び出したあとにthen()が走る
+    // 値を書き出している
+    getDataFile(_fname).then((File file) {
+      file.writeAsString(value);
+    });
+  }
+
+  // 値の読み込み
+  Future<String> loadIt() async {
+    try {
+      final file = await getDataFile(_fname);
+      return file.readAsString();
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+
+// SharedPreference
+// アプリのデータ類はFileに保存するが、アプリの細々とした設定情報などは、もっとお手軽に保存できる
+// keyとvalueで保存や取得ができる. int,double,bool,String,List<String>のみ
+// 基本形: SharedPreferences.getInstance().then((SharedPreferences prefs) .....)
+class PreferencesSample extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: "Generated App",
+      initialRoute: "/",
+      routes: {
+        "/": (context) => FirstPreferencesScreen()
+      },
+    );
+  }
+}
+
+class FirstPreferencesScreen extends StatefulWidget {
+
+  FirstPreferencesScreen({Key key}): super(key: key);
+
+  @override
+  _FirstPreferencesScreen createState() => new _FirstPreferencesScreen();
+}
+
+class _FirstPreferencesScreen extends State<FirstPreferencesScreen> {
+  final _controller = TextEditingController();
+  double _r = 0.0;
+  double _g = 0.0;
+  double _b = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    loadPref();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Home")
+      ),
+      body: Container(
+        color: Color.fromARGB(200, _r.toInt(), _g.toInt(), _b.toInt()),
+        child: Column(
+          children: <Widget>[
+            Text("Home Screen"),
+            Padding(padding: EdgeInsets.all(20.0),),
+            TextField(
+              controller: _controller,
+            ),
+            Padding(padding: EdgeInsets.all(10.0),),
+            Slider(
+              min: 0.0,
+              max: 255.0,
+              value: _r,
+              divisions: 255,
+              onChanged: (double value) {
+                setState(() {
+                  _r = value;
+                });
+              },
+            ),
+            Slider(
+              min: 0.0,
+              max: 255.0,
+              value: _g,
+              divisions: 255,
+              onChanged: (double value) {
+                setState(() {
+                  _g = value;
+                });
+              },
+            ),
+            Slider(
+              min: 0.0,
+              max: 255.0,
+              value: _b,
+              divisions: 255,
+              onChanged: (double value) {
+                setState(() {
+                  _b = value;
+                });
+              },
+            )
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.open_in_new),
+        onPressed: () {
+          savePref();
+          showDialog(
+            context: context,
+              builder: (BuildContext context) => AlertDialog(
+                title: Text("saved!"),
+                content: Text("save preferences."),
+              )
+            );
+        },
+      ),
+    );
+  }
+
+  // 保存した値の取得処理
+  void loadPref() async {
+    SharedPreferences.getInstance().then((SharedPreferences prefs) {
+      setState(() {
+        // 値が存在しなかった場合は0.0を取得
+        _r = (prefs.getDouble("r") ?? 0.0);
+        _g = (prefs.getDouble("g") ?? 0.0);
+        _b = (prefs.getDouble("b") ?? 0.0);
+        _controller.text = (prefs.getString("input") ?? "");
+      });
+    });
+  }
+
+  // 値の保存処理
+  void savePref() async {
+    SharedPreferences.getInstance().then((SharedPreferences prefs) {
+      prefs.setDouble("r", _r);
+      prefs.setDouble("g", _g);
+      prefs.setDouble("b", _b);
+      prefs.setString("input", _controller.text);
+    });
+  }
+}
