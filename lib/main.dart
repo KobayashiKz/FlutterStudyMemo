@@ -16,6 +16,8 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+//import 'package:path/path.dart';
 
 // MyApp()がウィジェット
 // main関数でMyApp()のウィジェットのアプリを起動させている処理
@@ -2937,4 +2939,235 @@ class _FirstPreferencesScreen extends State<FirstPreferencesScreen> {
       prefs.setString("input", _controller.text);
     });
   }
+}
+
+
+// データベースアクセス: sqliteを使用
+// iPhoneやAndroidは内部にSQLiteが組み込まれている
+// pubspec.yamlでSQFLiteを取り込む必要あり
+// 基本形: データベースを開く
+// Database database = await openDatabase(DBファイル, バージョン, onCreate: ....)
+// 基本形: オープン時の作成処理
+// (Database db, int version) async {....}
+// 基本形: テーブル操作を伴わない処理の実行
+// await [Database].execute(.....)
+// 基本形: レコード取得
+// List<Map> 変数 = await [Database].rawQuery(.....);
+// 基本形: テーブルの書き換えとトランザクション
+// await database.transaction((txn) async {.....});
+// DB操作の主なメソッド
+// 取得: rawQuery(), 保存: rawInsert(), 更新: rawUpdate(), 削除: rawDelete()
+class DatabaseUsageSample extends StatelessWidget {
+
+  @override
+  Widget build(BuildContext context) {
+    return new MaterialApp(
+      title: "My APP",
+      initialRoute: "/",
+      routes: {
+        "/": (context) => FirstDatabaseScreen(),
+        "/list": (context) => SecondDatabaseScreen(),
+      },
+    );
+  }
+}
+
+class FirstDatabaseScreen extends StatefulWidget {
+
+  FirstDatabaseScreen({Key key}): super(key: key);
+
+  @override
+  _FirstDatabaseScreenState createState() => new _FirstDatabaseScreenState();
+}
+
+class _FirstDatabaseScreenState extends State<FirstDatabaseScreen> {
+  final _controllerA = TextEditingController();
+  final _controllerB = TextEditingController();
+  final _controllerC = TextEditingController();
+
+  final TextStyle styleA = TextStyle(
+    fontSize: 28.0,
+    color: Colors.black87,
+  );
+
+  final TextStyle styleB = TextStyle(
+    fontSize: 24.0,
+    color: Colors.black87,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Home"),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            Text("Home Screen"),
+            Text("Name: ", style: styleB,),
+            TextField(controller: _controllerA, style: styleA,),
+            Text("Mail: ", style: styleB,),
+            TextField(controller: _controllerB, style: styleA,),
+            Text("TEL: ", style: styleB,),
+            TextField(controller: _controllerC, style: styleA,)
+          ],
+        ),
+      ),
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            title: Text("add"), icon: Icon(Icons.home)
+          ),
+          BottomNavigationBarItem(
+            title: Text("list"), icon: Icon(Icons.list)
+          ),
+        ],
+        onTap: (int index) {
+          if (index == 1) {
+            // 画面遷移
+            Navigator.pushNamed(context, "/list");
+          }
+        },
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.save),
+        onPressed: () {
+//          saveData();
+          showDialog(
+            context: context,
+            builder: (BuildContext context) => AlertDialog(
+              title: Text("Saved!"),
+              content: Text("insert data into database."),
+            )
+          );
+        },
+      ),
+    );
+  }
+
+  // DB保存処理
+  // 手順①~④
+  // path.dartのインポートの関係でコメント化
+//  void saveData() async {
+//    // ①パスの取得
+//    // dbファイルのパスをgetDatabasePath()で取得
+//    String dbPath = await getDatabasesPath();
+//    // ファイルパスの取得
+//    String path = join(dbPath, "mydata.db");
+//
+//    // ②データの用意
+//    // テキストフィールドに入力されたテキスト
+//    String data1 = _controllerA.text;
+//    String data2 = _controllerB.text;
+//    String data3 = _controllerC.text;
+//    // クエリのデータも用意
+//    String query = 'INSERT INTO mydata(name, mail, tel) VALUES("$data1", "$data2", "$data3")';
+//
+//    // ③データベースのオープン
+//    Database database = await openDatabase(path, version: 1,
+//        onCreate: (Database db, int version) async {
+//      // テーブルが存在しない場合はファイルを作成するクエリ文
+//          await db.execute("CREATE TABLE IF NOT EXISTS mydata (id INTEGER"
+//              "PRIMARY KEY, name TEXT, mail TEXT, tel TEXT)");
+//        });
+//
+//    // ④トランザクションによる保存
+//    // DB保存はトランザクションを利用して行われる
+//    // トランザクションを管理するクラスインスタンスがtxnに入る
+//    await database.transaction((txn) async {
+//      // rawInsert: レコードの追加
+//      int id = await txn.rawInsert(query);
+//      print("insert: $id");
+//    });
+//
+//    setState(() {
+//      _controllerA.text = "";
+//      _controllerB.text = "";
+//      _controllerC.text = "";
+//    });
+//  }
+}
+
+class SecondDatabaseScreen extends StatefulWidget {
+
+  SecondDatabaseScreen({Key key}): super(key: key);
+
+  @override
+  _SecondDatabaseScreen createState() => new _SecondDatabaseScreen();
+}
+
+class _SecondDatabaseScreen extends State<SecondDatabaseScreen> {
+  List<Widget> _items = <Widget>[];
+
+  @override
+  void initState() {
+    super.initState();
+//    getItems();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("List"),
+      ),
+      body: ListView(
+        children: _items,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 1,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            title: Text("add"),
+            icon: Icon(Icons.home)
+          ),
+          BottomNavigationBarItem(
+            title: Text("list"),
+            icon: Icon(Icons.list)
+          )
+        ],
+        onTap: (int index) {
+          if (index == 0) {
+            Navigator.pop(context);
+          }
+        },
+      ),
+    );
+  }
+
+  // DB取得処理
+  // 手順①~③
+  // path.dartのインポートの関係でコメント化
+//  void getItems() async {
+//    List<Widget> list = <Widget>[];
+//    String dbPath = await getDatabasesPath();
+//    String path = join(dbPath, "mydata.db");
+//
+//    Database database = await openDatabase(path, version: 1,
+//        onCreate: (Database db, int version) async { await db.execute(
+//      "CREATE TABLE IF NOT EXISTS mydata (id INTEGER PRIMARY KEY, name TEXT, mail TEXT, tel TEXT)");
+//    });
+//
+//    // ①レコードの取得
+//    // rawQuery: レコードを取得する一文を実行. 各レコードがMapに詰められる
+//    List<Map> result = await database.rawQuery("SELECT * FROM mydata");
+//
+//    // ②レコードからListを作成
+//    for (Map item in result) {
+//      list.add(ListTile(
+//        title: Text(item["name"]),
+//        subtitle: Text(item["mail"] + " " + item["tel"]),
+//      ));
+//    }
+//
+//    // ③UIを更新する
+//    setState(() {
+//      _items = list;
+//    });
+//  }
 }
